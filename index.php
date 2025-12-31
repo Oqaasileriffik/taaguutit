@@ -145,6 +145,9 @@ if (!empty($id)) {
 			if (!empty($lex['lex_info'])) {
 				echo '<tr><th data-l10n="LBL_INFO"></th><td>'.nl2br(htmlspecialchars($lex['lex_info'])).'</td></tr>';
 			}
+			if (!empty($refs[$lex['lex_id']])) {
+				echo '<tr><th data-l10n="LBL_REFERENCE"></th><td>'.nl2br(htmlspecialchars(implode(";\n", $refs[$lex['lex_id']]))).'</td></tr>';
+			}
 		}
 		echo '</table></div>';
 		echo '</td></tr>';
