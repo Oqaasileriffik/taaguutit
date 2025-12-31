@@ -69,11 +69,10 @@ header h3 {
 }
 .menu .lang-select .item {
 	margin-left: .5rem;
+	border: 1px solid black;
 }
 .menu .item {
 	display: flex;
-	padding: 2px;
-	color: #212529;
 }
 .item tt {
 	color: #c35d42;

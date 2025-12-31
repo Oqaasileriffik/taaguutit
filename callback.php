@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 	die();
 }
 
-$db = get_db(true);
+$db = get_db();
 
 while ($_REQUEST['a'] === 'search' || $_REQUEST['a'] === 'suggest') {
 	$q = trim($_REQUEST['q'] ?? '');

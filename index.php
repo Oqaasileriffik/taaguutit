@@ -1,8 +1,7 @@
 <?php
 require_once __DIR__.'/_inc/shared.php';
 
-$db = get_db(true);
-
+$id = intval($_REQUEST['id'] ?? 0);
 $search = trim(preg_replace('~[\s\pZ]{2,}~u', ' ', $_REQUEST['st'] ?? ''));
 $opts = [
 	'df' => ($_REQUEST['df'] ?? false),
@@ -22,7 +21,7 @@ foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title data-l10n="SITE_TITLE">Greenlandic Terms</title>
+	<title>Taaguutit « Oqaasileriffik</title>
 
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Gudea%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic%7CRoboto%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic&amp;ver=5.5.3" type="text/css" media="all">
@@ -33,7 +32,6 @@ foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
 	<link rel="alternate" hreflang="kl" href="https://taaguutit.gl/kl">
 	<link rel="alternate" hreflang="en" href="https://taaguutit.gl/en">
 	<link rel="alternate" hreflang="x-default" href="https://taaguutit.gl/">
-	<link rel="manifest" href="manifest.json">
 	<script src="https://cdn.jsdelivr.net/npm/jquery@3.7/dist/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -80,12 +78,9 @@ foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
 	<div class="menu">
 	<div class="container">
 		<div class="lang-select">
-			<a class="dropdown text-decoration-none fs-5" id="dropLanguages" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false"><i class="bi bi-globe2"></i></a>
-			<ul class="dropdown-menu" aria-labelledby="dropLanguages">
-				<li><a href="./kl" class="item l10n" data-which="kl" title="Kalaallisut"><tt>KAL</tt> <span>Kalaallisut</span></a></li>
-				<li><a href="./da" class="item l10n" data-which="da" title="Dansk"><tt>DAN</tt> <span>Dansk</span></a></li>
-				<li><a href="./en" class="item l10n" data-which="en" title="English"><tt>ENG</tt> <span>English</span></a></li>
-			</ul>
+			<a href="./kl" class="item l10n" data-which="kl" title="Kalaallisut"><span class="fi fi-gl"></span></a>
+			<a href="./da" class="item l10n" data-which="da" title="Dansk"><span class="fi fi-dk"></span></a>
+			<a href="./en" class="item l10n" data-which="en" title="English"><span class="fi fi-gb"></span></a>
 		</div>
 	</div>
 	</div>
@@ -97,6 +92,68 @@ foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
 <h1 data-l10n="HDR_TERMS_TITLE">Terms</h1>
 <p class="fs-4" data-l10n="HDR_TERMS_SUBTITLE">The Language Council's approved terminology</p>
 </div>
+
+<?php
+if (!empty($id)) {
+	$db = get_db();
+	$lexs = [];
+	$dom = 0;
+	$stm = $db->prepexec("SELECT lex_id, lex_lexeme, lex_language, lex_wordclass, lex_domain, lex_definition, lex_info FROM kat_lexeme_attrs NATURAL JOIN kat_lexemes NATURAL JOIN glue_lexeme_synonyms WHERE (lex_id = ? OR lex_syn = ?) ORDER BY lex_lexeme ASC", [$id, $id]);
+	while ($row = $stm->fetch()) {
+		$lexs[$row['lex_id']] = $row;
+		$dom = $row['lex_domain'];
+	}
+
+	$dom = $db->prepexec("SELECT dom_id, dom_code, dom_eng, dom_dan, dom_kal FROM kat_domains WHERE dom_id = ?", [$dom])->fetchAll()[0];
+
+	$refs = [];
+	$stm = $db->prepexec("SELECT lex_id, ref_id, ref_reference FROM glue_lexeme_references NATURAL JOIN kat_references WHERE lex_id IN (".implode(', ', array_keys($lexs)).") ORDER BY ref_reference");
+	while ($row = $stm->fetch()) {
+		$refs[$row['lex_id']][$row['ref_id']] = $row['ref_reference'];
+	}
+
+	$wcs = [];
+	$stm = $db->prepexec("SELECT wc_class, wc_eng, wc_dan, wc_kal FROM kat_wordclasses");
+	while ($row = $stm->fetch()) {
+		$wcs[$row['wc_class']] = $row;
+	}
+
+	$langs = [];
+	foreach ($lexs as $lex) {
+		$langs[$lex['lex_language']] = $lex['lex_language'];
+	}
+
+	echo '<div class="my-3"><a class="link btnBack" href="#" data-l10n="LBL_BACK">Back to results</a></div>';
+	echo '<div class="table-responsive"><table class="table table-striped table-bordered table-hover">';
+	foreach ($GLOBALS['-langs'] as $l => $f) {
+		if (!array_key_exists($l, $langs)) {
+			continue;
+		}
+		$u = strtoupper($l);
+		echo '<tr><th colspan="2"><span class="fi fi-'.$f.'"></span> <span data-l10n="LBL_'.$u.'"></span></th></tr>';
+		echo '<tr><td colspan="2">';
+		echo '<div class="table-responsive"><table class="table table-striped table-bordered table-hover">';
+		foreach ($lexs as $lex) {
+			if ($lex['lex_language'] != $l) {
+				continue;
+			}
+			echo '<tr><th data-l10n="LBL_TERM"></th><td class="term">'.htmlspecialchars($lex['lex_lexeme']).'</td></tr>';
+			echo '<tr><th data-l10n="LBL_WORDCLASS"></th><td><span class="lang-toggle lang-en">'.htmlspecialchars($wcs[$lex['lex_wordclass']]['wc_eng']).'</span><span class="lang-toggle lang-da">'.htmlspecialchars($wcs[$lex['lex_wordclass']]['wc_dan']).'</span><span class="lang-toggle lang-kl">'.htmlspecialchars($wcs[$lex['lex_wordclass']]['wc_kal']).'</span> (<span class="font-monospace">'.$lex['lex_wordclass'].'</span>)</td></tr>';
+			if (!empty($lex['lex_definition'])) {
+				echo '<tr><th data-l10n="LBL_DEFINITION"></th><td>'.nl2br(htmlspecialchars($lex['lex_definition'])).'</td></tr>';
+			}
+			if (!empty($lex['lex_info'])) {
+				echo '<tr><th data-l10n="LBL_INFO"></th><td>'.nl2br(htmlspecialchars($lex['lex_info'])).'</td></tr>';
+			}
+		}
+		echo '</table></div>';
+		echo '</td></tr>';
+	}
+	echo '<tr><th><span data-l10n="LBL_DOMAIN"></span></th><td>'.$dom['dom_code'].' <span class="lang-toggle lang-en">'.$dom['dom_eng'].'</span><span class="lang-toggle lang-da">'.$dom['dom_dan'].'</span><span class="lang-toggle lang-kl">'.$dom['dom_kal'].'</span></td></tr>';
+	echo '</table></div>';
+}
+else {
+?>
 
 <form class="my-5 text-start" action="./#results" method="get" accept-charset="utf-8" id="p_search">
 	<div class="my-3 input-group">
@@ -203,7 +260,8 @@ foreach ($GLOBALS['-langs'] as $l => $f) {
 		</div>
 	</div>
 	<div class="my-3 text-center">
-		<button class="btn btn-primary btnSearch" type="submit"><i class="bi bi-search"></i> <span data-l10n="BTN_SEARCH">Search</span></button>
+		<button class="mx-3 btn btn-primary btnSearch" type="submit"><i class="bi bi-search"></i> <span data-l10n="BTN_SEARCH">Search</span></button>
+		<button class="mx-3 btn btn-outline-secondary btnClear" type="button"><i class="bi bi-arrow-counterclockwise"></i> <span data-l10n="LBL_CLEAR">Clear</span></button>
 	</div>
 </form>
 
@@ -269,6 +327,10 @@ if (!empty($search)) {
 }
 ?>
 </div>
+
+<?php
+}
+?>
 
 <aside class="alert alert-light" data-l10n="TXT_DISCLAIMER">Please observe that typing errors etc. may exist. The ‘Taaguutaasivik’ termbank is under development. Additions and corrections are made on an ongoing basis.</aside>
 

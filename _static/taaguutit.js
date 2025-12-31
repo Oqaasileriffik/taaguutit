@@ -162,6 +162,8 @@ function l10n_world(node) {
 		let v = l10n_translate(k);
 		e.attr('placeholder', v);
 	});
+	$(node).find('.lang-toggle').hide();
+	$(node).find('.lang-'+_g.lang).show();
 	if (node === document) {
 		$('html').attr('lang', _g.lang);
 	}
@@ -259,6 +261,16 @@ function changeLangs() {
 $(window).on('load', function() {
 	$('.btnKey').click(keyHit);
 	$('.btnLetter').click(firstLetter);
+	$('.btnClear').click(function(e) {
+		e.preventDefault();
+		$('#st').val('');
+		$('.remember').prop('checked', false);
+		$('#pm').prop('checked', true);
+		$('#sl_mul').prop('checked', true);
+		$('#tl_kal').prop('checked', true);
+		$('.remember').trigger('remember');
+		return false;
+	});
 
 	$('a.l10n').click(function(e) {
 		e.preventDefault();
@@ -299,4 +311,20 @@ $(window).on('load', function() {
 
 	l10n_detectLanguage();
 	l10n_world();
+
+	$('.term').first().each(function() {
+		$('title').text($(this).text() + ' « Taaguutit « Oqaasileriffik');
+	});
+
+	$('.btnBack').click(function(e) {
+		e.preventDefault();
+		if (document.referrer.indexOf('https://taaguutit.gl/') != -1 && document.referrer != location.href) {
+			location.href = document.referrer;
+			history.back();
+		}
+		else {
+			location.href = './';
+		}
+		return false;
+	});
 });
