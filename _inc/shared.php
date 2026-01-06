@@ -67,27 +67,35 @@ function search_dicts($st, $os = []) {
 	$ascii = Transliterator::create('any-ascii');
 
 	$ws = [];
-	$st = preg_replace('~[^-./\pL\pM\pN\s\pZ]+~', '', $st);
+	$st = preg_replace('~[^-./\pL\pM\pN\s\pZ#]+~', '', $st);
 	$st = trim(preg_replace('~[\s\pZ]{2,}~u', ' ', $st));
 
 	$ss = [$st => true];
-	$lc = $st;
-	if (!$os['cs']) {
-		$lc = $lower->transliterate($st);
-		$ss[$lc] = true;
+	if ($st == '#') {
+		$ss = [];
+		for ($i=0 ; $i<10 ; ++$i) {
+			$ss[$i] = $i;
+		}
 	}
-	if (!$os['xd']) {
-		$ss[$ascii->transliterate($st)] = true;
-		$ss[$ascii->transliterate($lc)] = true;
-		if (preg_match('~[æĸ]~iu', $st)) {
-			$asc = $st;
-			$asc = preg_replace('~æ~iu', 'a', $asc);
-			$asc = preg_replace('~ĸ~iu', 'k', $asc);
-			$ss[$ascii->transliterate($asc)] = true;
-			$asc = $lc;
-			$asc = preg_replace('~æ~iu', 'a', $asc);
-			$asc = preg_replace('~ĸ~iu', 'k', $asc);
-			$ss[$ascii->transliterate($asc)] = true;
+	else {
+		$lc = $st;
+		if (!$os['cs']) {
+			$lc = $lower->transliterate($st);
+			$ss[$lc] = true;
+		}
+		if (!$os['xd']) {
+			$ss[$ascii->transliterate($st)] = true;
+			$ss[$ascii->transliterate($lc)] = true;
+			if (preg_match('~[æĸ]~iu', $st)) {
+				$asc = $st;
+				$asc = preg_replace('~æ~iu', 'a', $asc);
+				$asc = preg_replace('~ĸ~iu', 'k', $asc);
+				$ss[$ascii->transliterate($asc)] = true;
+				$asc = $lc;
+				$asc = preg_replace('~æ~iu', 'a', $asc);
+				$asc = preg_replace('~ĸ~iu', 'k', $asc);
+				$ss[$ascii->transliterate($asc)] = true;
+			}
 		}
 	}
 
