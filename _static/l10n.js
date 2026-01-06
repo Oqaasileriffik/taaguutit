@@ -141,6 +141,7 @@ l10n.s.kal = {
 	LBL_KAL: "Kalaallisut",
 	LBL_KEYBOARD: "Naqinnerit immikkut ittut",
 	LBL_LAT: "Latinerisut",
+	LBL_MUL: "Tamaasa",
 	LBL_PLACEHOLDER: "Taaguut ujakkat allaguk",
 	LBL_REFERENCE: "Tigusiffik",
 	LBL_SEARCH_CASE: "Naqinnerit mikisut angisuullu immikkoortillugit",
@@ -151,6 +152,7 @@ l10n.s.kal = {
 	LBL_SKIP: "qaangiinnaruk",
 	LBL_SOURCE_LANG: "Oqaatsit aallaaviusut",
 	LBL_TARGET_LANG: "Oqaatsit nutserneri",
+	LBL_TERM: "Taaguut",
 	LBL_WORDCLASS: "Oqaatsip suussusia pingaarneq",
 	TXT_DISCLAIMER: "Erseqqissaatigineqassaaq naqinnerliukkanik assigisaannillu peqarsinnaammat. Taaguutaasivik ineriariartortinneqarpoq aaqqitassallu piffissap ingerlanerani aaqqinneqartarumaarlutik.",
 };
