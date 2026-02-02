@@ -67,7 +67,7 @@ function search_dicts($st, $os = []) {
 	$ascii = Transliterator::create('any-ascii');
 
 	$ws = [];
-	$st = preg_replace('~[^-./\pL\pM\pN\s\pZ#]+~', '', $st);
+	$st = preg_replace('~[^-./\pL\pM\pN\s\pZ#]+~u', '', $st);
 	$st = trim(preg_replace('~[\s\pZ]{2,}~u', ' ', $st));
 
 	$ss = [$st => true];
