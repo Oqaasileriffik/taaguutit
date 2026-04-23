@@ -121,7 +121,7 @@ function search_dicts($st, $os = []) {
 	}
 	if (!$os['pm']) {
 		foreach ($ss as $k => $s) {
-			$ss[$k] = "%$s";
+			$nss["%$s"] = true;
 		}
 	}
 	else {
