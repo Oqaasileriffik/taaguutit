@@ -9,6 +9,7 @@ $opts = [
 	'ww' => ($_REQUEST['ww'] ?? false),
 	'pm' => ($_REQUEST['pm'] ?? false),
 	'xd' => ($_REQUEST['xd'] ?? false),
+	'd' => ($_REQUEST['d'] ?? []),
 	];
 
 foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
@@ -24,7 +25,7 @@ foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
 	<title>Taaguutit « Oqaasileriffik</title>
 
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Gudea%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic%7CRoboto%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic&amp;ver=5.5.3" type="text/css" media="all">
+	<link rel="stylesheet" href="https://fonts.bunny.net/css?family=Gudea%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic%7CRoboto%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic&amp;ver=5.5.3" type="text/css" media="all">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11/font/bootstrap-icons.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3/dist/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7/css/flag-icons.min.css">
@@ -96,9 +97,16 @@ foreach (['mul', 'dan', 'deu', 'eng', 'fra', 'gre', 'lat', 'kal'] as $lang) {
 <?php
 if (!empty($id)) {
 	$db = get_db();
+	$ids = [$id => $id];
+	$stm = $db->prepexec("SELECT lex_id, lex_syn FROM glue_lexeme_synonyms WHERE lex_id = ? OR lex_syn = ?", [$id, $id]);
+	while ($row = $stm->fetch()) {
+		$ids[$row['lex_id']] = intval($row['lex_id']);
+		$ids[$row['lex_syn']] = intval($row['lex_syn']);
+	}
+
 	$lexs = [];
 	$dom = 0;
-	$stm = $db->prepexec("SELECT lex_id, lex_lexeme, lex_language, lex_wordclass, lex_domain, lex_definition, lex_info FROM kat_lexeme_attrs NATURAL JOIN kat_lexemes NATURAL JOIN glue_lexeme_synonyms WHERE (lex_id = ? OR lex_syn = ?) ORDER BY lex_lexeme ASC", [$id, $id]);
+	$stm = $db->prepexec("SELECT lex_id, lex_lexeme, lex_language, lex_wordclass, lex_domain, lex_definition, lex_info FROM kat_lexeme_attrs NATURAL JOIN kat_lexemes WHERE lex_id IN (".implode(', ', array_keys($ids)).") ORDER BY lex_lexeme ASC");
 	while ($row = $stm->fetch()) {
 		$lexs[$row['lex_id']] = $row;
 		$dom = $row['lex_domain'];
@@ -262,6 +270,68 @@ foreach ($GLOBALS['-langs'] as $l => $f) {
 			</div>
 		</div>
 	</div>
+	<div class="my-3">
+		<div class="row align-items-start rows-cols-auto">
+			<fieldset class="col">
+				<legend><a role="button" data-bs-toggle="collapse" href=".coll_dom"><span data-l10n="LBL_DOMAINS">Domains</span> <span class="coll_dom collapse show text-blue"><i class="bi bi-caret-down-square"></i></span><span class="coll_dom collapse text-blue"><i class="bi bi-caret-up-square"></i></span></a></legend>
+			</fieldset>
+			<div class="coll_dom collapse columns">
+<?php
+$db = get_db();
+$doms = [];
+$stm = $db->prepexec("SELECT dom_id, dom_code, dom_eng, dom_dan, dom_kal FROM kat_domains INNER JOIN kat_lexemes ON (dom_id = lex_domain) NATURAL JOIN kat_lexeme_attrs WHERE FIND_IN_SET('taaguutit', lex_attrs) AND NOT FIND_IN_SET('hidden', lex_attrs)");
+while ($row = $stm->fetch()) {
+	$doms[$row['dom_code']] = $row;
+}
+uksort($doms, 'strnatcmp');
+
+$nest = [];
+foreach ($doms as $code => $dom) {
+	$pc = preg_replace('~^(\d+).*$~', '$1.x.x', $code);
+	$nest[$pc][$code] = $dom;
+}
+
+foreach ($nest as $pc => $doms) {
+	if (count($doms) == 1) {
+		$dom = reset($doms);
+		echo <<<XOUT
+	<div class="avoid-break">
+		<div class="form-check">
+			<input id="dom_{$dom['dom_id']}" class="form-check-input remember" type="checkbox" name="d[{$dom['dom_code']}]">
+			<label for="dom_{$dom['dom_id']}" title="{$dom['dom_code']}"><span class="lang-toggle lang-en">{$dom['dom_eng']}</span><span class="lang-toggle lang-da">{$dom['dom_dan']}</span><span class="lang-toggle lang-kl">{$dom['dom_kal']}</span></label>
+		</div>
+	</div>
+XOUT;
+	}
+	else {
+		$dom = reset($doms);
+		echo <<<XOUT
+	<div class="avoid-break">
+		<div class="form-check">
+			<input id="dom_pc_{$dom['dom_id']}" class="form-check-input remember chkDomain dom_p" type="checkbox" name="d[{$pc}]">
+			<label for="dom_pc_{$dom['dom_id']}" title="{$pc}"><span class="lang-toggle lang-en">{$dom['dom_eng']}</span><span class="lang-toggle lang-da">{$dom['dom_dan']}</span><span class="lang-toggle lang-kl">{$dom['dom_kal']}</span></label>
+		</div>
+		<div class="sublist_dom_{$dom['dom_id']} collapse show">└ <a class="ms-3" href=".sublist_dom_{$dom['dom_id']}" role="button" data-bs-toggle="collapse" data-l10n="LBL_DOMAINS_SUB">Show sub-domains</a></div>
+			<span class="sublist_dom_{$dom['dom_id']} collapse">
+XOUT;
+		foreach ($doms as $code => $dom) {
+			echo <<<XOUT
+		<div class="text-nowrap"><div class="d-inline-block align-top">└</div>
+		<div class="d-inline-block form-check">
+			<input id="dom_{$dom['dom_id']}" class="form-check-input remember chkDomain dom_s" type="checkbox" name="d[{$dom['dom_code']}]">
+			<label for="dom_{$dom['dom_id']}" class="text-wrap" title="{$dom['dom_code']}"><span class="lang-toggle lang-en">{$dom['dom_eng']}</span><span class="lang-toggle lang-da">{$dom['dom_dan']}</span><span class="lang-toggle lang-kl">{$dom['dom_kal']}</span></label>
+		</div>
+		</div>
+XOUT;
+		}
+
+		echo "</span></div>";
+	}
+}
+?>
+			</div>
+		</div>
+	</div>
 	<div class="my-3 text-center">
 		<button class="mx-3 btn btn-primary btnSearch" type="submit"><i class="bi bi-search"></i> <span data-l10n="BTN_SEARCH">Search</span></button>
 		<button class="mx-3 btn btn-outline-secondary btnClear" type="button"><i class="bi bi-arrow-counterclockwise"></i> <span data-l10n="LBL_CLEAR">Clear</span></button>
@@ -273,6 +343,10 @@ foreach ($GLOBALS['-langs'] as $l => $f) {
 
 <div class="my-4" id="results">
 <?php
+if (is_array($opts['d']) && !empty($opts['d']) && empty($search)) {
+	$search = '%';
+}
+
 if (!empty($search)) {
 	$syns = search_dicts($search, $opts);
 	if (empty($syns)) {
@@ -299,12 +373,18 @@ if (!empty($search)) {
 				$order[$l] = $l;
 			}
 		}
-		echo '<thead class="table-dark"><tr>';
+		echo '<thead class="table-dark"><tr class="align-top">';
 		foreach ($order as $l) {
 			$u = strtoupper($l);
 			echo '<th><span class="fi fi-'.$GLOBALS['-langs'][$l].'"></span> <span data-l10n="LBL_'.$u.'"></span> (<span class="font-monospace">'.$l.'</span>)</th>';
 		}
 		echo '</tr></thead>';
+		echo '<tfoot class="table-dark"><tr class="align-top">';
+		foreach ($order as $l) {
+			$u = strtoupper($l);
+			echo '<th><span class="fi fi-'.$GLOBALS['-langs'][$l].'"></span> <span data-l10n="LBL_'.$u.'"></span> (<span class="font-monospace">'.$l.'</span>)</th>';
+		}
+		echo '</tr></tfoot>';
 		echo '<tbody>';
 		foreach ($syns as $sid => $ss) {
 			echo '<tr>';

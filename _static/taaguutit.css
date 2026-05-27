@@ -180,6 +180,16 @@ header h3 {
 	height: 100px;
 }
 
+.smaller {
+	font-size: 75%;
+}
+.columns {
+	columns: 3;
+}
+.avoid-break {
+	break-inside: avoid;
+}
+
 .no-shadow {
 	text-shadow: unset;
 }

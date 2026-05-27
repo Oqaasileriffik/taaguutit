@@ -50,11 +50,15 @@ function search_dicts($st, $os = []) {
 	$os['ww'] = $os['ww'] ?? false;
 	$os['pm'] = $os['pm'] ?? false;
 	$os['xd'] = $os['xd'] ?? false;
+	$os['d'] = $os['d'] ?? [];
 	foreach ($GLOBALS['-langs'] as $l => $_) {
 		$os['sl_'.$l] = $os['sl_'.$l] ?? false;
 		$os['tl_'.$l] = $os['tl_'.$l] ?? false;
 	}
 	$os['suggest'] = $os['suggest'] ?? false;
+	if (!is_array($os['d'])) {
+		$os['d'] = [];
+	}
 
 	if ($os['ww'] || $os['suggest']) {
 		$os['pm'] = true;
@@ -67,7 +71,7 @@ function search_dicts($st, $os = []) {
 	$ascii = Transliterator::create('any-ascii');
 
 	$ws = [];
-	$st = preg_replace('~[^-./\pL\pM\pN\s\pZ#]+~u', '', $st);
+	$st = preg_replace('~[^-./\pL\pM\pN\s\pZ#%]+~u', '', $st);
 	$st = trim(preg_replace('~[\s\pZ]{2,}~u', ' ', $st));
 
 	$ss = [$st => true];
@@ -135,6 +139,11 @@ function search_dicts($st, $os = []) {
 
 	$ss = array_keys($nss);
 
+	if ($st == '%') {
+		$ss = ['%'];
+		$os['df'] = false;
+	}
+
 	$sql = "SELECT lex_id, lex_lexeme, lex_language FROM kat_lexeme_attrs NATURAL JOIN kat_lexemes WHERE FIND_IN_SET('taaguutit', lex_attrs) AND NOT FIND_IN_SET('hidden', lex_attrs) AND ";
 	$args = [];
 	foreach ($ss as $sk => $sv) {
@@ -148,6 +157,21 @@ function search_dicts($st, $os = []) {
 		}
 	}
 	$sql .= '('.implode(' OR ', $ss).')';
+	if (!empty($os['d'])) {
+		$sql = str_replace(' WHERE ', ' INNER JOIN kat_domains ON (lex_domain = dom_id) WHERE ', $sql);
+		$ds = [];
+		foreach ($os['d'] as $dc => $_) {
+			if (strpos($dc, '.x.x') !== false) {
+				$dc = str_replace('.x', '.%', $dc);
+				$ds[] = 'dom_code LIKE ?';
+			}
+			else {
+				$ds[] = 'dom_code = ?';
+			}
+			$args[] = $dc;
+		}
+		$sql .= ' AND ('.implode(' OR ', $ds).')';
+	}
 	if (!$os['sl_mul']) {
 		$sls = [];
 		foreach ($GLOBALS['-langs'] as $l => $_) {
