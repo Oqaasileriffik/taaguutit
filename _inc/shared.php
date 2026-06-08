@@ -11,8 +11,6 @@ $GLOBALS['-langs'] = [
 	'dan' => 'dk',
 	'kal' => 'gl',
 	'eng' => 'gb',
-	'deu' => 'de',
-	'fra' => 'fr',
 	'lat' => 'va',
 	'gre' => 'gr',
 	];
